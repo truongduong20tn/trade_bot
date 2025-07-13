@@ -20,7 +20,7 @@ void WebSocketClient::run() {
                                     return on_tls_init(hdl); });
 
     client.set_open_handler([](websocketpp::connection_hdl)
-                            { std::cout << "[INFO] WebSocket connection opened\n"; });
+                            { std::cout << "[INFO] WebSocket connection opened\n";});
 
     client.set_fail_handler([](websocketpp::connection_hdl)
                             { std::cerr << "[ERROR] WebSocket connection failed\n"; });
@@ -32,9 +32,16 @@ void WebSocketClient::run() {
             auto j = nlohmann::json::parse(msg->get_payload());
             if (j.contains("p")) {
                 double price = std::stod(j["p"].get<std::string>());
-                std::cout << "[DATA] Price received: " << price << "\n";
                 cb(price);
-            } else {
+                auto now = std::chrono::steady_clock::now();
+                if (now - last_print_time >= print_interval)
+                {
+                    std::cout << "[DATA] Price received: " << price << std::endl;
+                    last_print_time = now;
+                }
+            }
+            else
+            {
                 std::cout << "[DEBUG] Message received but no price: " << msg->get_payload() << "\n";
             }
         } catch (...) {

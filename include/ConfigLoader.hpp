@@ -10,6 +10,7 @@ public:
     std::string getSecretKey() const;
     std::string getSymbol() const;
     std::string getQuantity() const;
+    std::string getBaseUrl() const;
     nlohmann::json getStrategyConfig() const;
     bool isTestMode() const;
 

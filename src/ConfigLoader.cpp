@@ -22,5 +22,5 @@ std::string ConfigLoader::getSecretKey() const { return config["secret_key"].get
 std::string ConfigLoader::getSymbol() const { return config["symbol"].get<std::string>(); }
 bool ConfigLoader::isTestMode() const { return config["isTestMode"].get<bool>(); }
 std::string ConfigLoader::getQuantity() const { return config["quantity"].get<std::string>(); }
-std::string ConfigLoader::getBaseUrl() const { return isTestMode ? "https://testnet.binance.vision/api" : "https://api.binance.com/api"; }
+std::string ConfigLoader::getBaseUrl() const { return isTestMode() ? "https://testnet.binance.vision/api" : "https://api.binance.com/api"; }
 nlohmann::json ConfigLoader::getStrategyConfig() const { return config["strategy"]; }
