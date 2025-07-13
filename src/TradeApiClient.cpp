@@ -63,36 +63,16 @@ void TradeApiClient::printBalanceUSDT() {
         struct curl_slist* hdrs = nullptr;
         std::string apiKeyHeader = "X-MBX-APIKEY: " + apiKey_;      
         hdrs = curl_slist_append(hdrs, apiKeyHeader.c_str());
-        if (!hdrs)
-        {
-            std::cerr << "[ERROR] Failed to set headers\n";
-            curl_easy_cleanup(curl);
-            return;
-        }
         curl_easy_setopt(curl, CURLOPT_URL, fullUrl.c_str());
         curl_easy_setopt(curl, CURLOPT_HTTPHEADER, hdrs);
         curl_easy_setopt(curl, CURLOPT_SSL_VERIFYPEER, 1L);
-        // auto write_callback = [](void* ptr, size_t size, size_t nmemb, void* stream) -> size_t {
-        //         std::string* str = static_cast<std::string*>(stream);
-        //         size_t total = size * nmemb;
-        //         str->append((char*)ptr, total);
-        //         return total;
-        //     };
-            std::cout << "[DEBUG] Setting CURL options 2\n";
         curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, write_callback);
         curl_easy_setopt(curl, CURLOPT_WRITEDATA, &response);
-        std::cout << "[DEBUG] Setting CURL options 3\n";
-        if (!curl) {
-            std::cout << "[DEBUG] null curl 3\n";
-            return;
-        }
         CURLcode res = curl_easy_perform(curl);
-        std::cout << "[DEBUG] Setting CURL options 4\n";
         if (res != CURLE_OK) {
             std::cerr << "[ERROR] CURL: " << curl_easy_strerror(res) << "\n";
         } else {
             try {
-                std::cout << "[DEBUG] Setting CURL options 5\n";
                 auto j = nlohmann::json::parse(response);
                 for (const auto& asset : j["balances"]) {
                     if (asset["asset"] == "USDT") {
