@@ -7,7 +7,7 @@
 #include <iomanip>
 
 TradeApiClient::TradeApiClient(std::string apiKey, std::string secretKey, std::string baseUrl)
- : apiKey_(std::move(apiKey)), secretKey_(std::move(secretKey)), baseUrl_(std::move(baseUrl)) {}
+ : apiKey_(std::move(apiKey)), secretKey_(std::move(secretKey)), baseUrl_(std::move(baseUrl)), allUSDT_(0.0), btcBalance_(0.0) {}
 
 static std::string hmac_sha256(const std::string& key, const std::string& data) {
     unsigned char* digest = HMAC(EVP_sha256(),
@@ -21,12 +21,46 @@ static std::string hmac_sha256(const std::string& key, const std::string& data) 
 }
 
 void TradeApiClient::placeMarketOrder(const std::string& symbol,const std::string& side,const std::string& quantity) {
+    if (allUSDT_ <= 10.0) {
+        std::cout << "Khong du USDT de giao dich!!!";
+        return;
+    }
     std::lock_guard<std::mutex> lock(mutex_);
     std::string url = baseUrl_ + "/v3/order";
     long long ts = current_timestamp_ms();
     std::ostringstream q;
-    q << "symbol=" << symbol << "&side=" << side << "&type=MARKET"
-      << "&quantity=" << quantity << "&timestamp=" << ts;
+
+    if (side == "BUY")
+    {
+        if (allUSDT_ <= 10.0)
+        {
+            std::cout << "[Trade] Không đủ USDT để mua BTC\n";
+            return;
+        }
+        q << "symbol=" << symbol
+          << "&side=BUY"
+          << "&type=MARKET"
+          << "&quoteOrderQty=" << std::fixed << std::setprecision(2) << allUSDT_
+          << "&timestamp=" << ts;
+    }
+    else if (side == "SELL")
+    {
+        if (btcBalance_ <= 0.00001)
+        {
+            std::cout << "[Trade] Không đủ BTC để bán\n";
+            return;
+        }
+        q << "symbol=" << symbol
+          << "&side=SELL"
+          << "&type=MARKET"
+          << "&quantity=" << std::fixed << std::setprecision(6) << btcBalance_
+          << "&timestamp=" << ts;
+    }
+    else
+    {
+        std::cerr << "[Trade] Invalid side: " << side << "\n";
+        return;
+    }
 
     std::string sig = hmac_sha256(secretKey_, q.str());
     std::string fullUrl = url + "?" + q.str() + "&signature=" + sig;
@@ -57,7 +91,6 @@ void TradeApiClient::printBalanceUSDT() {
     std::string sig = hmac_sha256(secretKey_, q.str());
     std::string fullUrl = url + "?" + q.str() + "&signature=" + sig;
     CURL* curl = curl_easy_init();
-    std::cout << "[DEBUG] Full URL: " << fullUrl << "\n";
     if (curl) {
         std::string response;
         struct curl_slist* hdrs = nullptr;
@@ -78,6 +111,8 @@ void TradeApiClient::printBalanceUSDT() {
                     if (asset["asset"] == "USDT") {
                         std::cout << "[BALANCE] USDT Free: " << asset["free"]
                                   << ", Locked: " << asset["locked"] << "\n";
+                        allUSDT_ = asset["free"].get<double>();
+                        std::cout << "Set allUSDT_: " << allUSDT_;
                         break;
                     }
                 }
@@ -89,6 +124,12 @@ void TradeApiClient::printBalanceUSDT() {
         curl_slist_free_all(hdrs);
         curl_easy_cleanup(curl);
     }
+}
+
+void TradeApiClient::setBTCBalance(double btc) {
+    std::lock_guard<std::mutex> lock(mutex_);
+    std::cout << "btcBalance_ = " << btc << "\n";
+    btcBalance_ = btc;
 }
 
 size_t TradeApiClient::write_callback(char* ptr, size_t size, size_t nmemb, void* userdata) {

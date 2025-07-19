@@ -8,10 +8,13 @@ public:
     TradeApiClient(std::string apiKey, std::string secretKey, std::string baseUrl);
     void placeMarketOrder(const std::string& symbol,const std::string& side,const std::string& quantity);
     void printBalanceUSDT();
+    void setBTCBalance(double btc);
     static size_t write_callback(char* ptr, size_t size, size_t nmemb, void* userdata);
     private:
     std::string apiKey_;     
     std::string secretKey_; 
     std::string baseUrl_; 
     std::mutex mutex_;
+    double allUSDT_;
+    double btcBalance_;
 };

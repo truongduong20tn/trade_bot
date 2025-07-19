@@ -24,5 +24,5 @@ private:
     PriceCallback cb;
     bool running = false;
     std::chrono::steady_clock::time_point last_print_time = std::chrono::steady_clock::now();
-    const std::chrono::seconds print_interval = std::chrono::seconds(10);
+    const std::chrono::seconds print_interval = std::chrono::seconds(60);
 };
